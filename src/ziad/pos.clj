@@ -160,10 +160,8 @@
    a list of tokens with the highest entropy/probability
    based on the model."
   [sent model]
-  (let [words (-> sent
-                  common/partition-words)
-        final (->> (time (pos-optimized words model))
-                   rest
-                   (map spell-check)
-                   (map grammar-check))]
-    final))
+  (let [words (common/partition-words sent)]
+    (->> (time (pos-optimized words model))
+         rest
+         (map spell-check)
+         (map grammar-check))))

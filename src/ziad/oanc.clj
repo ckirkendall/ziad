@@ -30,8 +30,8 @@
   (let [{:keys [tok word]} (parse-word-block word-block)]
     [(-> model
           (update-in [:word-model word tok] (fnil inc 0))
-          (update-in [:token-model prev-tok tok] (fnil inc 0))
-          (update-in [:rev-token-model tok prev-tok] (fnil inc 0)))
+          (update-in [:token-model tok prev-tok] (fnil inc 0))
+          (update-in [:rev-token-model prev-tok tok] (fnil inc 0)))
      tok]))
 
 

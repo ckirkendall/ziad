@@ -2,6 +2,8 @@
   (:require [cognitect.transit :as transit]
             [clojure.java.io :as io]))
 
+(def endings #{\. \? \!})
+
 (defn normalize-hash-map [map-hash]
   (let [sum-vals  (apply + (vals map-hash))]
     (reduce #(assoc %1 %2 (/ (get %1 %2) sum-vals)) map-hash (keys map-hash))))
@@ -28,3 +30,29 @@
   (with-open [in (io/input-stream model-file-name)]
     (let [reader (transit/reader in :json)]
       (transit/read reader))))
+
+
+(defn partition-words
+  [sent]
+  (loop [[cur-char & rest-sent] sent
+         cur-word []
+         words []]
+    (cond
+      (nil? cur-char)
+      words
+
+      (and (not (empty? cur-word))
+           (= \space cur-char))
+      (recur rest-sent [] (conj words (apply str cur-word)))
+
+      (endings cur-char)
+      (conj words (apply str cur-word) (str cur-char))
+
+      (= \' cur-char)
+      (recur rest-sent [cur-char] (conj words (apply str cur-word)))
+
+      (not= \space cur-word)
+      (recur rest-sent (conj cur-word cur-char) words)
+
+      :else
+      (recur rest-sent cur-word words))))

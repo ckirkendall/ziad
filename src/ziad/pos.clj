@@ -8,7 +8,7 @@
 
 ;; below this probability a token
 ;; will be marked as a grammar issues
-(def grammer-threshold 0.006)
+(def grammer-threshold 0.000004)
 
 (defn word-toks
   "Given:
@@ -18,20 +18,24 @@
    Returns:
     A List of possible tokens for this word."
   [cur-word cur-tok model]
-  (let [word-model (get-in model [:word-model cur-word])]
-    (map (fn [tok]
-           {:tok tok})
-      (remove nil?
-              (cond
-                word-model
-                (keys word-model)
+  (try
+    (let [word-model (get-in model [:word-model cur-word])]
+      (map (fn [tok]
+             {:tok tok})
+        (remove nil?
+                (cond
+                  word-model
+                  (keys word-model)
 
-                ;;Unknown words in caps are consider proper nouns
-                (Character/isUpperCase (first cur-word))
-                ["NNP"]
+                  ;;Unknown words in caps are consider proper nouns
+                  (Character/isUpperCase (first cur-word))
+                  ["NNP"]
 
-                :else
-                (keys (get-in model [:rev-token-model (:tok cur-tok)])))))))
+                  :else
+                  (keys (get-in model [:rev-token-model (:tok cur-tok)]))))))
+    (catch Throwable t
+      (println "ERROR:" cur-word cur-tok)
+      (throw t))))
 
 
 (defn max-prob-fn
@@ -137,22 +141,38 @@
 
 
 (defn spell-check
-  "given a token annotate with unknown word if
-   the word is not a known word"
-  [{:keys [word-prob] :as tok-map}]
-  (if (<= word-prob 1/10000)
-    (assoc tok-map :unknown-word true)
-    tok-map))
+  "given set of tokens and model
+   return a set of tokens annotated
+   with unknown word if word does not
+   exist in the model"
+  [toks model]
+  (map (fn [{:keys [word] :as tok-map}]
+         (if-not (get-in model [:word-model word])
+           (assoc tok-map :unknown-word true)
+           tok-map))
+    toks))
 
 
 (defn grammar-check
-  "Given a token annotate grammar errors based
-   on probability of that token."
-  [{:keys [tok-prob unknown-word] :as tok-map}]
-  (if (and (not unknown-word)
-           (< tok-prob grammer-threshold))
-    (assoc tok-map :grammer-issue true)
-    tok-map))
+  "Given set of tokens annotate grammar errors based
+   on probability of a grammar tri existing."
+  [toks model]
+  (if (:tri-model model)
+    (reduce
+     (fn [stack tok]
+       (let [cnt (count stack)]
+         (if (>= cnt 2)
+           (let [tri (conj (subvec stack (- cnt 2) cnt) tok)
+                 prob (get-in model [:tri-model (mapv :tok tri)] 0.000004)]
+             (if (<= prob grammer-threshold)
+               (into (subvec stack 0 (- cnt 2))
+                     (map #(assoc % :grammer-issue true
+                                    :tr-prob prob) tri))
+               (conj stack tok)))
+           (conj stack tok))))
+     []
+     toks)
+    toks))
 
 
 (defn pos-tagger
@@ -161,7 +181,7 @@
    based on the model."
   [sent model]
   (let [words (common/partition-words sent)]
-    (->> (time (pos-optimized words model))
-         rest
-         (map spell-check)
-         (map grammar-check))))
+    (-> (time (pos-optimized words model))
+        rest
+        (spell-check model)
+        (grammar-check model))))

@@ -4,9 +4,11 @@
 
 (def endings #{\. \? \!})
 
-(defn normalize-hash-map [map-hash]
-  (let [sum-vals  (apply + (vals map-hash))]
-    (reduce #(assoc %1 %2 (/ (get %1 %2) sum-vals)) map-hash (keys map-hash))))
+(defn normalize-hash-map [cnt-hash]
+  (when-not (empty? cnt-hash)
+    (let [sum-vals  (reduce + 0 (vals cnt-hash))]
+      (into {} (map (fn [[k v]]
+                      [k (/ v sum-vals)]) cnt-hash)))))
 
 (defn normalize-full-model [model]
   (let [word-keys (keys (get model :word-model))
@@ -15,15 +17,18 @@
         word-model (get model :word-model)
         tok-model (get model :token-model)
         rtk-model (get model :rev-token-model)
+        tri-model (get model :tri-model)
         reduce-func (fn [tmodel tkey]
                       (assoc tmodel tkey
                         (normalize-hash-map (get tmodel tkey))))]
     (let [tmp-word-model (reduce reduce-func word-model word-keys)
           tmp-token-model (reduce reduce-func tok-model tok-keys)
-          tmp-rtk-model (reduce reduce-func rtk-model rtok-keys)]
+          tmp-rtk-model (reduce reduce-func rtk-model rtok-keys)
+          tmp-tri-model (normalize-hash-map tri-model)]
       (assoc model :word-model tmp-word-model
                    :token-model tmp-token-model
-                   :rev-token-model tmp-rtk-model ))))
+                   :rev-token-model tmp-rtk-model
+                   :tri-model tmp-tri-model))))
 
 
 (defn load-model [model-file-name]

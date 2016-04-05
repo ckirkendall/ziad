@@ -26,19 +26,30 @@
     {:tok tok :word word}))
 
 
-(defn add-word [model prev-tok word-block]
-  (let [{:keys [tok word]} (parse-word-block word-block)]
+(defn add-tri-count [model tok-list]
+  (if (>= (count tok-list) 3)
+    (let [cnt (count tok-list)
+          tri (subvec tok-list (- cnt 3) cnt)]
+      (update-in model [:tri-model tri] (fnil inc 0)))
+    model))
+
+
+(defn add-word [model tok-list word-block]
+  (let [prev-tok (last tok-list)
+        {:keys [tok word]} (parse-word-block word-block)
+        new-tok-list (conj tok-list tok)]
     [(-> model
           (update-in [:word-model word tok] (fnil inc 0))
           (update-in [:token-model tok prev-tok] (fnil inc 0))
-          (update-in [:rev-token-model prev-tok tok] (fnil inc 0)))
-     tok]))
+          (update-in [:rev-token-model prev-tok tok] (fnil inc 0))
+          (add-tri-count new-tok-list))
+     new-tok-list]))
 
 
 (defn load-sent [model sent]
   (first (reduce (fn [[cur-model tok] word-block]
                    (add-word cur-model tok word-block))
-                 [model :start]
+                 [model [:start]]
                  sent)))
 
 

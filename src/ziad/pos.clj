@@ -24,12 +24,28 @@
              {:tok tok})
         (remove nil?
                 (cond
+                  (and (= cur-word "'s")
+                       (#{"NNP" "NN"} (:tok cur-tok)))
+                  ["POS"]
+
                   word-model
                   (keys word-model)
+
+                  (and (Character/isUpperCase (first cur-word))
+                       (= (last cur-word) \s))
+                  ["NNPS"]
 
                   ;;Unknown words in caps are consider proper nouns
                   (Character/isUpperCase (first cur-word))
                   ["NNP"]
+
+                  (common/isNumber? cur-word)
+                  ["CD"]
+
+                  (common/isHyphenated? cur-word)
+                  (conj (mapcat #(word-toks % cur-tok model)
+                                (str/split cur-word #"-"))
+                        "JJ")
 
                   :else
                   (keys (get-in model [:rev-token-model (:tok cur-tok)]))))))
@@ -122,7 +138,7 @@
   [words model]
   (loop [toks [start]
          tidx 0
-         tdepth 2]
+         tdepth 3]
     (if (> (+ tidx tdepth) (count words))
       toks
       (let [tdepth (if (= (inc (+ tidx tdepth)) (count words))
@@ -135,7 +151,7 @@
                 (>= (+ tidx 1) (count toks))
                 (= (nth tok-set 1) (nth toks (+ tidx 1))))
           (recur (set-sub-vec toks tok-set tidx)
-                 (+ (- tdepth 2) tidx 1)
+                 (+ (- tdepth 3) tidx 1)
                  tdepth)
           (recur toks (dec tidx) (inc tdepth)))))))
 
@@ -152,6 +168,13 @@
            tok-map))
     toks))
 
+(defn create-semantic-tri [tri]
+  (mapv (fn [token]
+          (let [tok (:tok token)]
+            (case tok
+              "NNP" "NN"
+              "NNPS" "NNS"
+              tok))) tri))
 
 (defn grammar-check
   "Given set of tokens annotate grammar errors based
@@ -163,10 +186,11 @@
        (let [cnt (count stack)]
          (if (>= cnt 2)
            (let [tri (conj (subvec stack (- cnt 2) cnt) tok)
-                 prob (get-in model [:tri-model (mapv :tok tri)] 0.000004)]
+                 sem-tri (create-semantic-tri tri)
+                 prob (get-in model [:tri-model sem-tri] 0.000004)]
              (if (<= prob grammer-threshold)
                (into (subvec stack 0 (- cnt 2))
-                     (map #(assoc % :grammer-issue true
+                     (map #(assoc % :grammar-issue true
                                     :tr-prob prob) tri))
                (conj stack tok)))
            (conj stack tok))))

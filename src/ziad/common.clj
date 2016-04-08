@@ -1,8 +1,17 @@
 (ns ziad.common
-  (:require [cognitect.transit :as transit]
-            [clojure.java.io :as io]))
+  (:require [clojure.java.io :as io]
+            [cognitect.transit :as transit]
+            [clojure.string :as str]))
 
 (def endings #{\. \? \!})
+
+(defn isNumber? [word]
+  (every? #(or (Character/isDigit %)
+               (#{\, \.} %))
+          word))
+
+(defn isHyphenated? [word]
+  (some #{\-} word))
 
 (defn normalize-hash-map [cnt-hash]
   (when-not (empty? cnt-hash)
@@ -39,21 +48,24 @@
 
 (defn partition-words
   [sent]
-  (loop [[cur-char & rest-sent] sent
+  (loop [[cur-char & rest-sent] (str/trim sent)
          cur-word []
          words []]
     (cond
       (nil? cur-char)
       words
 
-      (and (not (empty? cur-word))
-           (= \space cur-char))
+      (= \space cur-char)
       (recur rest-sent [] (conj words (apply str cur-word)))
 
       (endings cur-char)
       (conj words (apply str cur-word) (str cur-char))
 
       (= \' cur-char)
+      (recur rest-sent [cur-char] (conj words (apply str cur-word)))
+
+      (and (#{\, \: \;} cur-char)
+           (not (Character/isDigit (last cur-word))))
       (recur rest-sent [cur-char] (conj words (apply str cur-word)))
 
       (not= \space cur-word)

@@ -13,4 +13,4 @@
              :source-paths ["src"]
              :compiler {:output-to "example.js"
                         :main ziad-example.core
-                        :optimizations :whitespace}}]})
+                        :optimizations :advanced}}]})

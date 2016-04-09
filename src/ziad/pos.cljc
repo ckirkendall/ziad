@@ -1,14 +1,26 @@
 (ns ziad.pos
-  (:require [clojure.string :as str]
-            [ziad.common :as common]))
+  (:require
+   [clojure.string :as str]
+   #?(:cljs [cognitect.transit :as transit])
+   #?(:clj  [ziad.common :as common]
+      :cljs [ziad.common :as common :refer-macros [inline-model]])))
 
 (declare pos-tag-max-ent)
 
 (def start {:tok :start})
 
+(def oanc-model
+  #?(:clj (common/load-model "oanc.transit")
+     :cljs (transit/read
+            (transit/reader :json)
+            (inline-model "oanc.transit"))))
+
+
 ;; below this probability a token
 ;; will be marked as a grammar issues
-(def grammer-threshold 0.000004)
+(def grammar-threshold
+  #?(:clj 4/1000000
+     :cljs 0.000004))
 
 (defn word-toks
   "Given:
@@ -18,40 +30,36 @@
    Returns:
     A List of possible tokens for this word."
   [cur-word cur-tok model]
-  (try
-    (let [word-model (get-in model [:word-model cur-word])]
-      (map (fn [tok]
-             {:tok tok})
-        (remove nil?
-                (cond
-                  (and (= cur-word "'s")
-                       (#{"NNP" "NN"} (:tok cur-tok)))
-                  ["POS"]
+  (let [word-model (get-in model [:word-model cur-word])]
+    (map (fn [tok]
+           {:tok tok})
+      (remove nil?
+              (cond
+                (and (= cur-word "'s")
+                     (#{"NNP" "NN"} (:tok cur-tok)))
+                ["POS"]
 
-                  word-model
-                  (keys word-model)
+                word-model
+                (keys word-model)
 
-                  (and (Character/isUpperCase (first cur-word))
-                       (= (last cur-word) \s))
-                  ["NNPS"]
+                (and (common/digit? (first cur-word))
+                     (= (last cur-word) \s))
+                ["NNPS"]
 
-                  ;;Unknown words in caps are consider proper nouns
-                  (Character/isUpperCase (first cur-word))
-                  ["NNP"]
+                ;;Unknown words in caps are consider proper nouns
+                (common/upper-case? (first cur-word))
+                ["NNP"]
 
-                  (common/isNumber? cur-word)
-                  ["CD"]
+                (common/isNumber? cur-word)
+                ["CD"]
 
-                  (common/isHyphenated? cur-word)
-                  (conj (mapcat #(word-toks % cur-tok model)
-                                (str/split cur-word #"-"))
-                        "JJ")
+                (common/isHyphenated? cur-word)
+                (conj (mapcat #(word-toks % cur-tok model)
+                              (str/split cur-word #"-"))
+                      "JJ")
 
-                  :else
-                  (keys (get-in model [:rev-token-model (:tok cur-tok)]))))))
-    (catch Throwable t
-      (println "ERROR:" cur-word cur-tok)
-      (throw t))))
+                :else
+                (keys (get-in model [:rev-token-model (:tok cur-tok)])))))))
 
 
 (defn max-prob-fn
@@ -72,10 +80,12 @@
       [-1, []]
       (let [word-prob (get-in model
                               [:word-model cur-word (:tok tok)]
-                              1/10000)
+                              #?(:clj 1/10000
+                                 :cljs (/ 1 10000)))
             tok-prob (get-in model
                              [:token-model (:tok tok) (:tok cur-tok)]
-                             1/10000)
+                             #?(:clj 1/10000
+                                :cljs (/ 1 10000)))
             x (pos-tag-max-ent (* word-prob tok-prob prob)
                                (assoc tok
                                       :word cur-word
@@ -187,8 +197,8 @@
          (if (>= cnt 2)
            (let [tri (conj (subvec stack (- cnt 2) cnt) tok)
                  sem-tri (create-semantic-tri tri)
-                 prob (get-in model [:tri-model sem-tri] 0.000004)]
-             (if (<= prob grammer-threshold)
+                 prob (get-in model [:tri-model sem-tri] grammar-threshold)]
+             (if (<= prob grammar-threshold)
                (into (subvec stack 0 (- cnt 2))
                      (map #(assoc % :grammar-issue true
                                     :tr-prob prob) tri))
@@ -203,9 +213,14 @@
   "Given a sentence and grammar/pos we will return
    a list of tokens with the highest entropy/probability
    based on the model."
-  [sent model]
-  (let [words (common/partition-words sent)]
-    (-> (time (pos-optimized words model))
-        rest
-        (spell-check model)
-        (grammar-check model))))
+  ([content]
+   (pos-tagger content oanc-model))
+  ([content model]
+   (let [sents (common/partition-sentences content)]
+     (mapcat
+      #(let [words (common/partition-words %)]
+         (-> (pos-optimized words model)
+             rest
+             (spell-check model)
+             (grammar-check model)))
+      sents))))

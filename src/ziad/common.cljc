@@ -97,8 +97,12 @@
          cur-word []
          words []]
     (cond
-      (nil? cur-char)
+      (and (nil? cur-char)
+           (empty? cur-word))
       words
+
+      (nil? cur-char)
+      (conj words (apply str cur-word))
 
       (= \space cur-char)
       (recur rest-sent [] (conj words (apply str cur-word)))

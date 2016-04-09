@@ -173,7 +173,8 @@
    exist in the model"
   [toks model]
   (map (fn [{:keys [word] :as tok-map}]
-         (if-not (get-in model [:word-model word])
+         (if-not (or (get-in model [:word-model word])
+                     (get-in model [:word-model (str/lower-case word)]))
            (assoc tok-map :unknown-word true)
            tok-map))
     toks))

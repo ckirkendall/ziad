@@ -1,0 +1,56 @@
+.grammar-issue {
+    padding-bottom: 3px;
+    border-bottom: 3px dotted green;
+}
+
+.unknown-word {
+    border-bottom: 2px dotted red;
+}
+
+.PERIOD {color: slateblue; }
+.QMARK {color: slateblue; }
+.EMARK {color: slateblue; }
+.COMMA {color: slateblue; }
+.COLON {color: slateblue; }
+.-LRB- {color: slateblue; }
+.-RRB- {color: slateblue; }
+.-RSB- {color: slateblue; }
+.-LSB- {color: slateblue; }
+.-LCB- {color: slateblue; }
+.-RCB- {color: slateblue; }
+.CC {color: indianred; }
+.CD {color: greenyellow; }
+.DT {color: chocolate; }
+.EX {color: tomato; }
+.FW {color: darkgreen; }
+.IN {color: tomato; }
+.JJ {color: darkgreen; }
+.JJR {color: forestgreen; }
+.JJS {color: green; }
+.LS {color: tomato; }
+.MD {color: olive; }
+.NN {color: blue; }
+.NNS {color: navy; }
+.NNP {color: darkblue; }
+.NNPS {color: darkcyan; }
+.PDT {color: skyblue; }
+.POS {color: steelblue; }
+.PRP {color: darkorchid; }
+.PP$ {color: darkviolet; }
+.RB {color: darkorange; }
+.RBR {color: orangered; }
+.RBS {color: orangered; }
+.RP {color: orange; }
+.SYM {color: chocolate; }
+.TO {color: tomato; }
+.UH {color: tomato; }
+.VB {color: red; }
+.VBD {color: darkred; }
+.VBG {color: maroon; }
+.VBN {color: firebrick; }
+.VBP {color: crimson; }
+.VBZ {color: maroon; }
+.WDT {color: purple; }
+.WP {color: purple; }
+.WP$ {color: mediumvioletred; }
+.WRB {color: mediumvioletred; }

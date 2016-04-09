@@ -134,7 +134,11 @@
     tok))
 
 (defn token->html [token]
-  (str "<span class='" (token->class token) "'>"
+  (str "<span class='"
+       (token->class token)
+       " "
+       (if (:unknown-word token) "unknown-word" "")
+       "'>"
        (:word token)
        "</span>"))
 
@@ -142,7 +146,7 @@
 (def grammar-end "</span>")
 
 (defn tokens->html [tokens]
-  (let [space? #(= (first (:word %)) \')]
+  (let [space? #(not (#{\. \, \'} (first (:word %))))]
     (apply str
       (first
        (reduce (fn [[tags g-issue?] tok]

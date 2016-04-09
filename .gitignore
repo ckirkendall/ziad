@@ -2,8 +2,10 @@
 /target
 /classes
 /checkouts
+/example/target
 pom.xml
 pom.xml.asc
+*.js
 *.jar
 *.class
 /.lein-*

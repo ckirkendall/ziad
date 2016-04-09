@@ -29,7 +29,9 @@
 (defn page []
   [:div
    [:div {:class "page-header"}
-    [:h1 "Ziad " [:small "Grammar Checker and Part of Speech Tagger"]]]
+    [:h1 "Ziad " [:small "Grammar Checker and Part of Speech Tagger"]]
+    [:div {:style {:position "absolute" :top "10px" :right "20px"}}
+     [:a {:href "https://github.com/ckirkendall/ziad"} "GitHub Source"]]]
    [:form
     [:div [:textarea {:id "input-text" :class "form-control"
                       :rows 3 :defaultValue (:sentence @state)}]]

@@ -3,7 +3,7 @@
             [ziad.pos :as pos]
             [ziad.common :as common]))
 
-(def init-sent "Sally Cornelly went to there house.")
+(def init-sent "Sally Cornelly went to there house.  She wanted to go to you're house.")
 
 (defn by-id [id] (js/document.getElementById id))
 

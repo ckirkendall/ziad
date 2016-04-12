@@ -12,7 +12,6 @@
         tokens (pos/pos-tagger sent)
         total-time (- (js/Date.now) start-time)
         html-text (common/tokens->html tokens)]
-    (js/console.log html-text)
     {:sentence sent
      :tokens tokens
      :html html-text
@@ -20,11 +19,20 @@
 
 (defonce state (r/atom (convert-sent init-sent)))
 
-(defn analyze [event]
-  (.preventDefault event)
+(defn analyze []
   (let [input (.-value (by-id "input-text"))
         new-state (convert-sent input)]
     (reset! state new-state)))
+
+(defn update-sent [event]
+  (.preventDefault event)
+  (analyze))
+
+(defn update-grammar-threshold [e]
+  (js/console.log (.-target e))
+  (let [value (.. e -currentTarget -value)]
+    (reset! pos/grammar-threshold value)
+    (analyze)))
 
 (defn page []
   [:div
@@ -35,7 +43,17 @@
    [:form
     [:div [:textarea {:id "input-text" :class "form-control"
                       :rows 3 :defaultValue (:sentence @state)}]]
-    [:div [:button {:class "btn btn-primary" :on-click analyze} "Analyze"]]]
+    [:div [:button {:class "btn btn-primary" :on-click update-sent} "Analyze"]]
+    [:br]
+    [:div {:class "form-group"}
+     [:label "Grammar Threshold - " @pos/grammar-threshold ]
+     [:input {:type "range"
+              :style {:width 200}
+              :defaultValue @pos/grammar-threshold
+              :min (/ 1 1000000)
+              :max (/ 1 25000)
+              :step (/ 1 1000000)
+              :on-change update-grammar-threshold}]]]
    [:div {:class "results"}
     [:div {:class "panel panel-default"}
      [:div {:class "panel-heading"}

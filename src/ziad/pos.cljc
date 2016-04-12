@@ -19,8 +19,9 @@
 ;; below this probability a token
 ;; will be marked as a grammar issues
 (def grammar-threshold
-  #?(:clj 4/1000000
-     :cljs 0.000004))
+  (atom
+   #?(:clj 4/1000000
+      :cljs 0.000004)))
 
 (defn word-toks
   "Given:
@@ -198,8 +199,10 @@
          (if (>= cnt 2)
            (let [tri (conj (subvec stack (- cnt 2) cnt) tok)
                  sem-tri (create-semantic-tri tri)
-                 prob (get-in model [:tri-model sem-tri] grammar-threshold)]
-             (if (<= prob grammar-threshold)
+                 prob (get-in model
+                              [:tri-model sem-tri]
+                              @grammar-threshold)]
+             (if (<= prob @grammar-threshold)
                (into (subvec stack 0 (- cnt 2))
                      (map #(assoc % :grammar-issue true
                                     :tr-prob prob) tri))

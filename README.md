@@ -4,7 +4,10 @@ Ziad is a part of speech tagger and grammar checker written from the
 ground up in Clojure and ClojureScript.  It was written as a teaching
 tool to help explain the basic concepts of statistical learning.
 
-[cljs demo](https://ckirkendall.github.io/ziad/)
+[Intro to Statistical Learning - slides](https://github.com/ckirkendall/ziad/blob/master/intro-to-statistical-learning.pdf)
+
+
+[Ziad ClojureScript demo in the browser](https://ckirkendall.github.io/ziad/)
 
 ## License
 

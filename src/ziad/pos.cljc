@@ -114,7 +114,8 @@
    Description:
     This is a straight max entropy algorithm that checks
     all possible valid token/word probabilities. This
-    algorithm is O(n!)"
+    algorithm is O(t^n) where t is the tokens per word
+    an n is the number of words."
   [prob cur-tok word-list accum model]
   (if (empty? word-list)
     [prob, (conj accum cur-tok)]
